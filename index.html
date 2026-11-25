@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Frango Forte | Simulador IBS e CBS</title>
+    <meta name="description" content="Simulador de Split Payment, recolhimento pelo adquirente e créditos de IBS e CBS da Frango Forte.">
+    <meta name="theme-color" content="#10364f">
+    <link rel="stylesheet" href="./assets/css/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#simulacao">Ir para a simulação</a>
+    <noscript>
+      <p class="noscript">Ative o JavaScript para usar a calculadora.</p>
+    </noscript>
+    <header>
+      <div class="headerin">
+        <img class="logo" src="./assets/img/contalger.png" alt="Contalger Assessoria Contábil">
+        <div class="headtext">
+          <span class="eyebrow">FRANGO FORTE</span>
+          <h1>Split, RAD e débito extinto</h1>
+          <p>IBS e CBS na compra · Caixa, recolhimento e crédito</p>
+        </div>
+        <div class="headtools">
+          <button class="btn dark" id="printBtn" type="button">Imprimir cenário</button>
+          <button class="btn accent" id="presentBtn" type="button" aria-pressed="false">Modo apresentação</button>
+        </div>
+      </div>
+    </header>
+    <main class="app" id="app">
+      <div class="intro">
+        <p><strong>Split e RAD são formas de extinguir o débito.</strong> O crédito da compra acompanha a extinção, nas condições da regra geral.</p>
+        <div class="example">
+          <label for="example">Exemplo</label>
+          <select id="example">
+            <option value="taxed">Compra tributada</option>
+            <option value="rad">RAD com abatimento acordado</option>
+            <option value="radFull">RAD sem abatimento</option>
+            <option value="bird">Ave viva: redução de 60%</option>
+            <option value="partial">Metade do débito já extinta</option>
+            <option value="extinct">Débito totalmente extinto</option>
+            <option value="pending">Fornecedor ainda não recolheu</option>
+            <option value="zero">Compra com alíquota zero</option>
+            <option value="custom" disabled>Valores personalizados</option>
+          </select>
+        </div>
+      </div>
+      <div class="layout">
+        <aside class="panel inputs">
+          <p class="sectionlabel">Valores da operação</p>
+          <h2>Configure a compra</h2>
+          <div class="seg" aria-label="Forma de informar valores">
+            <button type="button" data-pricing="document" aria-pressed="false">Valores da nota</button>
+            <button type="button" data-pricing="rates" aria-pressed="true">Por alíquotas</button>
+          </div>
+          <div class="modefields" id="documentFields" hidden>
+            <div class="fields">
+              <div class="field full">
+                <label for="total">Total da operação (R$)</label>
+                <input autocomplete="off" spellcheck="false" id="total" inputmode="decimal" value="11.230,00">
+                <div class="hint">
+                  Total já inclui o IBS e a CBS informados abaixo.
+                </div>
+              </div>
+              <div class="field">
+                <label for="ibs">IBS devido (R$)</label>
+                <input autocomplete="off" spellcheck="false" id="ibs" inputmode="decimal" value="100,00">
+              </div>
+              <div class="field">
+                <label for="cbs">CBS devida (R$)</label>
+                <input autocomplete="off" spellcheck="false" id="cbs" inputmode="decimal" value="1.130,00">
+              </div>
+            </div>
+          </div>
+          <div class="modefields" id="ratesFields">
+            <div class="fields">
+              <div class="field full">
+                <label for="base">Base sem IBS/CBS (R$)</label>
+                <input autocomplete="off" spellcheck="false" id="base" inputmode="decimal" value="10.000,00">
+              </div>
+              <div class="field">
+                <label for="rateIbs">Alíquota IBS (%)</label>
+                <input autocomplete="off" spellcheck="false" id="rateIbs" inputmode="decimal" value="1,00">
+              </div>
+              <div class="field">
+                <label for="rateCbs">Alíquota CBS (%)</label>
+                <input autocomplete="off" spellcheck="false" id="rateCbs" inputmode="decimal" value="11,30">
+              </div>
+              <div class="field full">
+                <label for="reduction">Redução das alíquotas (%)</label>
+                <input autocomplete="off" spellcheck="false" id="reduction" inputmode="decimal" value="0,00">
+              </div>
+            </div>
+            <p class="pricehint"><strong>Alíquotas editáveis.</strong> Valores iniciais da simulação: IBS de 1% e CBS de 11,30%. Você pode alterar os dois campos. O total resulta da base mais IBS e CBS.</p>
+          </div>
+          <div class="subsection">
+            <h3>Débitos já extintos</h3>
+            <p class="small compact">Valores confirmados e vinculados a esta compra, inclusive por compensação.</p>
+            <div class="fields">
+              <div class="field">
+                <label for="priorIbs">IBS extinto (R$)</label>
+                <input autocomplete="off" spellcheck="false" id="priorIbs" inputmode="decimal" value="0,00">
+              </div>
+              <div class="field">
+                <label for="priorCbs">CBS extinta (R$)</label>
+                <input autocomplete="off" spellcheck="false" id="priorCbs" inputmode="decimal" value="0,00">
+              </div>
+            </div>
+            <div class="mini-actions" aria-label="Extinção anterior">
+              <button type="button" data-prior="0">Nenhum</button>
+              <button type="button" data-prior="0.5">50%</button>
+              <button type="button" data-prior="1">100%</button>
+            </div>
+          </div>
+          <label class="check">
+            <input autocomplete="off" spellcheck="false" id="eligible" type="checkbox" checked>
+            <span>Documento fiscal idôneo e aquisição com direito ao crédito regular.</span>
+          </label>
+          <div class="error" id="error" role="alert" hidden>
+          </div>
+        </aside>
+        <section id="simulacao" class="panel stage" tabindex="-1" aria-label="Simulação dos pagamentos">
+          <p class="sectionlabel">Quem recolhe o saldo</p>
+          <div class="route" aria-label="Modalidade de extinção">
+            <button type="button" data-route="split" aria-pressed="true">Split Payment<small>Segregação no pagamento</small></button>
+            <button type="button" data-route="rad" aria-pressed="false">RAD<small>Adquirente recolhe</small></button>
+            <button type="button" data-route="supplier" aria-pressed="false">Fornecedor recolhe<small>Pagamento pelo contribuinte</small></button>
+          </div>
+          <p class="routehelp" id="routeHelp"></p>
+          <div class="radcheck" id="radControls" hidden>
+            <label class="check">
+              <input type="checkbox" id="radAdjust" checked>
+              <span>Repasse ao fornecedor com abatimento do RAD acordado entre as partes.</span>
+            </label>
+            <p>O art. 36 não concede abatimento comercial automático. Sem ajuste, o desembolso do adquirente aumenta.</p>
+          </div>
+          <div class="steprows">
+            <ol class="steps" aria-label="Etapa atual">
+              <li data-step="0" class="active">
+                <span>1</span>
+                Documento
+              </li>
+              <li data-step="1">
+                <span>2</span>
+                Pagamento
+              </li>
+              <li data-step="2">
+                <span>3</span>
+                Extinção e crédito
+              </li>
+            </ol>
+            <span class="badge neutral" id="stageBadge">Antes do pagamento</span>
+          </div>
+          <div class="stageheader">
+            <h2 id="flowTitle">Previsão dos fluxos</h2>
+            <span class="badge" id="debtBadge">Débito pendente</span>
+          </div>
+          <p class="printonly" id="printSummary"></p>
+          <div class="flow" aria-label="Fluxo financeiro">
+            <div class="node buy">
+              <label>Adquirente desembolsa</label>
+              <strong id="buyerCash">R$ 11.230,00</strong>
+              <small>Frango Forte</small>
+            </div>
+            <div class="arrow" aria-hidden="true">
+              →
+            </div>
+            <div class="node">
+              <label>Fornecedor recebe</label>
+              <strong id="supplierCash">R$ 10.000,00</strong>
+              <small id="supplierDetail">Líquido da segregação</small>
+            </div>
+            <div class="arrow" id="fiscalConnector" aria-hidden="true">
+              +
+            </div>
+            <div class="node fisc">
+              <label id="fiscLabel">Fisco receberá</label>
+              <strong id="fiscCash">R$ 1.230,00</strong>
+              <small id="fiscDetail">IBS e CBS segregados</small>
+            </div>
+          </div>
+          <p class="cashnote" id="cashNote"></p>
+          <div class="eventnote" id="eventNote" aria-live="polite">
+          </div>
+          <div class="table-scroll">
+            <table class="debts" aria-label="Débitos e créditos por tributo">
+              <thead>
+                <tr>
+                  <th scope="col">Tributo</th>
+                  <th scope="col">Devido na nota</th>
+                  <th scope="col">Já extinto</th>
+                  <th scope="col">Extinto agora</th>
+                  <th scope="col">A extinguir</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>IBS</strong></td>
+                  <td id="taxIbs"></td>
+                  <td id="doneIbs"></td>
+                  <td id="newIbs"></td>
+                  <td id="leftIbs"></td>
+                </tr>
+                <tr>
+                  <td><strong>CBS</strong></td>
+                  <td id="taxCbs"></td>
+                  <td id="doneCbs"></td>
+                  <td id="newCbs"></td>
+                  <td id="leftCbs"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="credit pending" id="creditBox">
+            <div>
+              <div class="creditlabel">
+                Crédito apropriável nesta etapa
+              </div>
+              <p id="creditDetail">Aguardando confirmação da extinção.</p>
+            </div>
+            <strong id="creditTotal">R$ 0,00</strong>
+          </div>
+          <div class="controlrow">
+            <div>
+              <span class="small" id="effective"></span>
+              <span class="keyhint">Use ← e → para voltar e avançar as etapas.</span>
+            </div>
+            <div class="actions">
+              <button class="btn quiet" type="button" id="restartBtn">Reiniciar etapas</button>
+              <button class="btn primary" type="button" id="nextBtn">Simular pagamento</button>
+            </div>
+          </div>
+        </section>
+      </div>
+      <details class="legal" id="compare">
+        <summary>Comparar as formas de recolhimento</summary>
+        <div class="inside">
+          <div class="comparebox">
+            <table class="comparison">
+              <thead>
+                <tr>
+                  <th scope="col">Após a confirmação da extinção</th>
+                  <th scope="col">Adquirente paga</th>
+                  <th scope="col">Fornecedor recebe</th>
+                  <th scope="col">Recolhimento novo</th>
+                  <th scope="col">Crédito total</th>
+                </tr>
+              </thead>
+              <tbody id="comparisonBody">
+              </tbody>
+            </table>
+          </div>
+          <p>No pagamento pelo fornecedor, o recolhimento sai do caixa dele. O crédito anterior e o novo crédito não se somam duas vezes.</p>
+        </div>
+      </details>
+      <details class="legal">
+        <summary>Regras e base legal da demonstração</summary>
+        <div class="inside">
+          <p><strong>O que está sendo simulado.</strong> Uma aquisição no regime regular, com pagamento integral, documento idôneo e tributo corretamente informado. Os exemplos são fictícios. A confirmação de extinção é encenada pelos botões e não consulta os sistemas fiscais. A ferramenta não realiza pagamentos nem transmite obrigações.</p>
+          <p><strong>Split padrão:</strong> o recolhimento considera os débitos da operação menos as parcelas já extintas, por tributo, conforme art. 32, § 3º. Aqui a consulta é considerada disponível. A indisponibilidade e sua devolução de excedente, o split simplificado do art. 33 e pagamentos parcelados não fazem parte desta simulação.</p>
+          <p><strong>RAD:</strong> recolhimento pelo adquirente, nos termos do art. 36, em pagamento que não permita segregação por split. O valor recolhido quita o saldo não extinto. O ajuste no repasse ao fornecedor depende do acordo entre as partes.</p>
+          <p><strong>Crédito:</strong> arts. 27 e 47. Na regra geral, o crédito acompanha o débito da aquisição extinto, com documento idôneo e direito ao crédito. Pagar a nota ao fornecedor, sozinho, não confirma essa extinção. Valores já extintos podem ter origem em compensação, sem novo desembolso nesta operação.</p>
+          <p><strong>Exceções:</strong> a dispensa do art. 48, combustíveis monofásicos, crédito presumido rural, Simples Nacional e outras regras específicas não são calculados. Em 2026, o destaque de teste não equivale automaticamente a crédito recuperável.</p>
+          <p><strong>Ave viva para abate:</strong> redução de 60% pelo art. 137. Com os valores iniciais da simulação, IBS de 1% e CBS de 11,30% tornam-se 0,40% e 4,52%, respectivamente. Esses percentuais são parâmetros editáveis, não uma definição de alíquotas oficiais. <strong>Compra de carne a zero:</strong> não gera crédito regular ao adquirente (art. 49). A venda de carne a zero pela indústria mantém os créditos válidos anteriores (art. 52).</p>
+          <p><a href="https://www2.camara.leg.br/legin/fed/leicom/2025/leicomplementar-214-16-janeiro-2025-796905-normaatualizada-pl.html" target="_blank" rel="noopener">LC 214/2025, texto atualizado: arts. 27, 31 a 36, 47 a 52 e 137</a> · Revisão: 24/11/2026.</p>
+        </div>
+      </details>
+      <div class="foot">
+        <span>CONTALGER ASSESSORIA CONTÁBIL · Frango Forte</span>
+        <span>Simulação didática · Valores em reais · Sem conexão com a SEFAZ ou a Receita</span>
+      </div>
+    </main>
+    <script src="./assets/js/calculator.js" defer>
+    </script>
+    <script src="./assets/js/app.js" defer>
+    </script>
+  </body>
+</html>
